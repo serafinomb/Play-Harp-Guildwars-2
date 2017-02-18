@@ -2,48 +2,47 @@
 <html>
 <head>
   <title></title>
-  <script src="node_modules/tone/build/Tone.js"></script>
 </head>
 <body>
 
-  <div class="skill-bar">
-    <div id="note-60" class="skill skill-1">
+  <div id="skill-bar" class="skill-bar">
+    <div id="skill-1" class="skill skill-1">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="note-62" class="skill skill-2">
+    <div id="skill-2" class="skill skill-2">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="note-64" class="skill skill-3">
+    <div id="skill-3" class="skill skill-3">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="note-65" class="skill skill-4">
+    <div id="skill-4" class="skill skill-4">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="note-67" class="skill skill-5">
+    <div id="skill-5" class="skill skill-5">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="note-69" class="skill skill-6">
+    <div id="skill-6" class="skill skill-6">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="note-71" class="skill skill-7">
+    <div id="skill-7" class="skill skill-7">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="note-72" class="skill skill-8">
+    <div id="skill-8" class="skill skill-8">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="octave-down" class="skill skill-9">
+    <div id="skill-9" class="skill skill-9">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="octave-up" class="skill skill-10">
+    <div id="skill-0" class="skill skill-10">
       <div class="front"></div>
       <div class="back"></div>
     </div>
@@ -94,6 +93,13 @@
   .skill-9 .front, .skill-9 .back { background-image: url('img/octave_down.png'); }
   .skill-10 .front, .skill-10 .back { background-image: url('img/octave_up.png'); }
 
+  .octave-0 .skill-9 .back,
+  .octave-1 .skill-9 .back { background-image: url('img/octave_lock.png'); }
+
+  .octave-1 .skill-10 .back,
+  .octave-2 .skill-10 .back { background-image: url('img/octave_lock.png'); }
+
+
   .skill .front,
   .skill .back {
     backface-visibility: hidden;
@@ -115,55 +121,80 @@
 </style>
 
 <script>
+var skillMap = {
+    '49': '1',
+    '50': '2',
+    '51': '3',
+    '52': '4',
+    '53': '5',
+    '54': '6',
+    '55': '7',
+    '56': '8',
+
+    '57': '9',
+    '48': '0',
+    '67': '9',
+    '86': '0',
+  };
+
   var map = {
-    '49': 60,
-    '50': 62,
-    '51': 64,
-    '52': 65,
-    '53': 67,
-    '54': 69,
-    '55': 71,
-    '56': 72,
+    '49': ['C3', 'C4', 'C5'],
+    '50': ['D3', 'D4', 'D5'],
+    '51': ['E3', 'E4', 'E5'],
+    '52': ['F3', 'F4', 'F5'],
+    '53': ['G3', 'G4', 'G5'],
+    '54': ['A3', 'A4', 'A5'],
+    '55': ['B3', 'B4', 'B5'],
+    '56': ['C4', 'C5', 'C6'],
 
-    '57': '-1',
-    '48': '+1',
-    '67': '-1',
-    '86': '+1',
+    '57': ['-1', '-1', '-1'],
+    '48': ['+1', '+1', '+1'],
+    '67': ['-1', '-1', '-1'],
+    '86': ['+1', '+1', '+1'],
   };
 
-  var uiMap = {
-    '60': 'note-60',
-    '62': 'note-62',
-    '64': 'note-64',
-    '65': 'note-65',
-    '67': 'note-67',
-    '69': 'note-69',
-    '71': 'note-71',
-    '72': 'note-72',
-    '-1': 'octave-down',
-    '+1': 'octave-up',
+  var sounds = {
+    'C3': [],
+    'D3': [],
+    'E3': [],
+    'F3': [],
+    'G3': [],
+    'A3': [],
+    'B3': [],
+    'C4': [],
+    'D4': [],
+    'E4': [],
+    'F4': [],
+    'G4': [],
+    'A4': [],
+    'B4': [],
+    'C5': [],
+    'D5': [],
+    'E5': [],
+    'F5': [],
+    'G5': [],
+    'A5': [],
+    'B5': [],
+    'C6': [],
   };
+
+  function preloadSounds(sounds) {
+    for (var note in sounds) {
+      if ( ! sounds.hasOwnProperty(note)) {
+        continue;
+      }
+
+      for (var i = 0; i < 25; i++) {
+        sounds[note].push(new Audio('audio/' + note + '.mp3'));
+      }
+    }
+  }
+
+  preloadSounds(sounds);
 
   var activeNotes = {};
-  var octave = 4;
-
-  var synthConf = {
-    "oscillator" : {
-      "type" : "sine",
-      "modulationFrequency" : 1
-    },
-    "envelope" : {
-      "attack" : 0.005,
-      "decay" : 1,
-      "sustain" : 0.1,
-      "release" : 3,
-    }
-  };
-
-  function noteToFrequency(note) {
-    var offset = ((octave - 4) * 12)
-    return (Math.pow(2, (note - 49 + offset) / 12)) * 440.0;
-  }
+  var defaultOctave = 1;
+  var octave = 1;
 
   function addActiveStatus(element) {
     element && element.classList.add('is-active');
@@ -173,7 +204,45 @@
     element && element.classList.remove('is-active');
   }
 
-  var synth = new Tone.PolySynth(6, Tone.Synth.bind(null, synthConf)).toMaster();
+  function handleOctaveChange(octave) {
+    var skillBar = document.getElementById('skill-bar');
+    setTimeout(function() {
+
+      skillBar.classList.remove('octave-0', 'octave-1', 'octave-2');
+      skillBar.classList.add('octave-' + octave);
+    }, 100);
+
+    var elements = document.querySelectorAll('.front');
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].style.transform = 'rotateX(' + (Math.abs(defaultOctave - octave) * 180) + 'deg)';
+    }
+
+    var elements = document.querySelectorAll('.back');
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].style.transform = 'rotateX(' + ((Math.abs(defaultOctave - octave) * 180) + 180) + 'deg)';
+    }
+  }
+
+  handleOctaveChange(octave);
+
+  function playNote(note) {
+    var preloaded = sounds[note];
+
+    for (var i = 0; i < preloaded.length; i++) {
+      console.log(preloaded[i].ended)
+      if ( ! ( ! preloaded[i].paused || preloaded[i].currentTime)) {
+        preloaded[i].play();
+        preloaded[i].addEventListener('ended', function() {
+          preloaded[i].currentTime = 0;
+          console.log('ended');
+        })
+        break;
+      }
+      // if (i == preloaded.length - 1) {
+      //   i = 0;
+      // }
+    }
+  }
 
   document.addEventListener('keydown', function(e) {
     if (activeNotes[e.which]) {
@@ -182,49 +251,32 @@
 
     activeNotes[e.which] = +new Date();
 
-    var note = map[e.which];
-
-    if ( ! note) {
+    if ( ! (map[e.which] && map[e.which][octave])) {
       return;
     }
 
-    addActiveStatus(document.getElementById(uiMap[map[e.which]]));
+    var note = map[e.which][octave];
+
+
+    addActiveStatus(document.getElementById('skill-' + skillMap[e.which]));
 
     if (note == '-1') {
-      octave--;
-
-      var elements = document.querySelectorAll('.front');
-      for (var i = 0; i < elements.length; i++) {
-        elements[i].style.transform = 'rotateX(' + (Math.abs(4 - octave) * 180) + 'deg)';
-      }
-      var elements = document.querySelectorAll('.back');
-      for (var i = 0; i < elements.length; i++) {
-        elements[i].style.transform = 'rotateX(' + ((Math.abs(4 - octave) * 180) + 180) + 'deg)';
-      }
-
+      octave = Math.max(0, octave - 1);
+      handleOctaveChange(octave);
       return;
     }
 
     if (note == '+1') {
-      octave++;
-
-      var elements = document.querySelectorAll('.front');
-      for (var i = 0; i < elements.length; i++) {
-        elements[i].style.transform = 'rotateX(' + (Math.abs(4 - octave) * 180) + 'deg)';
-      }
-      var elements = document.querySelectorAll('.back');
-      for (var i = 0; i < elements.length; i++) {
-        elements[i].style.transform = 'rotateX(' + ((Math.abs(4 - octave) * 180) + 180) + 'deg)';
-      }
-
+      octave = Math.min(2, octave + 1);
+      handleOctaveChange(octave);
       return;
     }
 
-    synth.triggerAttackRelease(noteToFrequency(note), '2n');
+    playNote(note);
   }, false);
 
   document.addEventListener('keyup', function(e) {
-    removeActiveStatus(document.getElementById(uiMap[map[e.which]]));
+    removeActiveStatus(document.getElementById('skill-' + skillMap[e.which]));
     delete activeNotes[e.which];
   }, false);
 </script>
