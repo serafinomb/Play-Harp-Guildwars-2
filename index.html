@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <script src="node_modules/tone/build/Tone.js"></script>
+</head>
+<body>
+
+  <div class="skill-bar">
+    <div id="note-60" class="skill skill-1">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="note-62" class="skill skill-2">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="note-64" class="skill skill-3">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="note-65" class="skill skill-4">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="note-67" class="skill skill-5">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="note-69" class="skill skill-6">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="note-71" class="skill skill-7">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="note-72" class="skill skill-8">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="octave-down" class="skill skill-9">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+    <div id="octave-up" class="skill skill-10">
+      <div class="front"></div>
+      <div class="back"></div>
+    </div>
+  </div>
+
+<style>
+  body {
+    text-align: center;
+  }
+
+  .skill-bar {
+    margin: 50px auto;
+    font-size: 0;
+  }
+
+  .skill {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    margin: 0 1px;
+    vertical-align: top;
+    border: 1px solid #000;
+  }
+
+  .skill.is-active .front,
+  .skill.is-active .back {
+    box-shadow: inset 0 0 15px 7px #000;
+  }
+
+  .skill .front,
+  .skill .back {
+    width: 60px;
+    height: 60px;
+    background-size: 80px 80px;
+    background-position: -10px -10px;
+    background-repeat: no-repeat;
+  }
+
+  .skill-1 .front, .skill-1 .back { background-image: url('img/note_1.png'); }
+  .skill-2 .front, .skill-2 .back { background-image: url('img/note_2.png'); }
+  .skill-3 .front, .skill-3 .back { background-image: url('img/note_3.png'); }
+  .skill-4 .front, .skill-4 .back { background-image: url('img/note_4.png'); }
+  .skill-5 .front, .skill-5 .back { background-image: url('img/note_5.png'); }
+  .skill-6 .front, .skill-6 .back { background-image: url('img/note_6.png'); }
+  .skill-7 .front, .skill-7 .back { background-image: url('img/note_7.png'); }
+  .skill-8 .front, .skill-8 .back { background-image: url('img/note_8.png'); }
+  .skill-9 .front, .skill-9 .back { background-image: url('img/octave_down.png'); }
+  .skill-10 .front, .skill-10 .back { background-image: url('img/octave_up.png'); }
+
+  .skill .front,
+  .skill .back {
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s;
+    transform-style: preserve-3d;
+  }
+
+  .skill .front {
+    z-index: 2;
+    transform: rotateX(0deg);
+  }
+
+  .skill .back {
+    transform: rotateX(180deg);
+  }
+</style>
+
+<script>
+  var map = {
+    '49': 60,
+    '50': 62,
+    '51': 64,
+    '52': 65,
+    '53': 67,
+    '54': 69,
+    '55': 71,
+    '56': 72,
+
+    '57': '-1',
+    '48': '+1',
+    '67': '-1',
+    '86': '+1',
+  };
+
+  var uiMap = {
+    '60': 'note-60',
+    '62': 'note-62',
+    '64': 'note-64',
+    '65': 'note-65',
+    '67': 'note-67',
+    '69': 'note-69',
+    '71': 'note-71',
+    '72': 'note-72',
+    '-1': 'octave-down',
+    '+1': 'octave-up',
+  };
+
+  var activeNotes = {};
+  var octave = 4;
+
+  var synthConf = {
+    "oscillator" : {
+      "type" : "sine",
+      "modulationFrequency" : 1
+    },
+    "envelope" : {
+      "attack" : 0.005,
+      "decay" : 1,
+      "sustain" : 0.1,
+      "release" : 3,
+    }
+  };
+
+  function noteToFrequency(note) {
+    var offset = ((octave - 4) * 12)
+    return (Math.pow(2, (note - 49 + offset) / 12)) * 440.0;
+  }
+
+  function addActiveStatus(element) {
+    element && element.classList.add('is-active');
+  }
+
+  function removeActiveStatus(element) {
+    element && element.classList.remove('is-active');
+  }
+
+  var synth = new Tone.PolySynth(6, Tone.Synth.bind(null, synthConf)).toMaster();
+
+  document.addEventListener('keydown', function(e) {
+    if (activeNotes[e.which]) {
+      return;
+    }
+
+    activeNotes[e.which] = +new Date();
+
+    var note = map[e.which];
+
+    if ( ! note) {
+      return;
+    }
+
+    addActiveStatus(document.getElementById(uiMap[map[e.which]]));
+
+    if (note == '-1') {
+      octave--;
+
+      var elements = document.querySelectorAll('.front');
+      for (var i = 0; i < elements.length; i++) {
+        elements[i].style.transform = 'rotateX(' + (Math.abs(4 - octave) * 180) + 'deg)';
+      }
+      var elements = document.querySelectorAll('.back');
+      for (var i = 0; i < elements.length; i++) {
+        elements[i].style.transform = 'rotateX(' + ((Math.abs(4 - octave) * 180) + 180) + 'deg)';
+      }
+
+      return;
+    }
+
+    if (note == '+1') {
+      octave++;
+
+      var elements = document.querySelectorAll('.front');
+      for (var i = 0; i < elements.length; i++) {
+        elements[i].style.transform = 'rotateX(' + (Math.abs(4 - octave) * 180) + 'deg)';
+      }
+      var elements = document.querySelectorAll('.back');
+      for (var i = 0; i < elements.length; i++) {
+        elements[i].style.transform = 'rotateX(' + ((Math.abs(4 - octave) * 180) + 180) + 'deg)';
+      }
+
+      return;
+    }
+
+    synth.triggerAttackRelease(noteToFrequency(note), '2n');
+  }, false);
+
+  document.addEventListener('keyup', function(e) {
+    removeActiveStatus(document.getElementById(uiMap[map[e.which]]));
+    delete activeNotes[e.which];
+  }, false);
+</script>
+</body>
+</html>
