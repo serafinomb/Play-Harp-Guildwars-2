@@ -71,6 +71,7 @@
     'C6': [],
   };
 
+  // Pre-loading the audio files is useless when the browser caches them.
   function preloadSounds(sounds, cb) {
     var loadedCount = 0;
     var toLoadCount = 0;
@@ -93,14 +94,14 @@
         // This event will fire every time the audio is ready to be played and
         // not only once "onload". We therefore check whether we've or not
         // already laoded all the needed audio files.
-        audio.addEventListener('canplaythrough', function() {
+        audio.addEventListener('canplaythrough', function(note) {
           if (loadedCount >= toLoadCount * queueLength) {
             return
           };
 
           loadedCount++;
           cb(loadedCount, toLoadCount * queueLength);
-        }, false);
+        }.bind(null, note), false);
 
         sounds[note].push(audio);
       }
@@ -110,6 +111,8 @@
   preloadSounds(sounds, function(loaded, total) {
     var remaining = total - loaded;
 
+    console.log(loaded, total);
+
     if (remaining == 0) {
       didLoad = true;
       var loadingScreen = document.getElementById('loadingScreen');
@@ -118,14 +121,12 @@
         loadingScreen.remove();
       }, 1500);
     }
-
-    console.log(remaining);
   });
 
   var didLoad = false;
   var activeNotes = {};
   var defaultOctave = 1;
-  var octave = 1;
+  var currentOctave = 1;
 
   function addActiveStatus(element) {
     element && element.classList.add('is-active');
@@ -154,7 +155,7 @@
     }
   }
 
-  handleOctaveChange(octave);
+  handleOctaveChange(currentOctave);
 
   function loadAudio(note) {
     return new Audio('audio/' + note + '.mp3');
@@ -195,23 +196,23 @@
 
     activeNotes[which] = +new Date();
 
-    if ( ! (keyCodeToNoteOctave[which] && keyCodeToNoteOctave[which][octave])) {
+    if ( ! (keyCodeToNoteOctave[which] && keyCodeToNoteOctave[which][currentOctave])) {
       return;
     }
 
-    var note = keyCodeToNoteOctave[which][octave];
+    var note = keyCodeToNoteOctave[which][currentOctave];
 
     addActiveStatus(document.getElementById('skill-' + keyCodeToSkill[which]));
 
     if (note == '-1') {
-      octave = Math.max(0, octave - 1);
-      handleOctaveChange(octave);
+      currentOctave = Math.max(0, currentOctave - 1);
+      handleOctaveChange(currentOctave);
       return;
     }
 
     if (note == '+1') {
-      octave = Math.min(2, octave + 1);
-      handleOctaveChange(octave);
+      currentOctave = Math.min(2, currentOctave + 1);
+      handleOctaveChange(currentOctave);
       return;
     }
 
