@@ -1,0 +1,124 @@
+@keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+  }
+
+  body {
+    text-align: center;
+    background-image: url('img/gw668.jpg');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .loading {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 99;
+
+    opacity: 1;
+    transition: opacity 1.5s ease;
+
+    background-color: #000;
+    background-image: url('img/divinitys_reach_loading_screen.jpg');
+    background-size: 100%;
+    background-position: 50%;
+    background-repeat: no-repeat;
+  }
+
+  .loading.fadeOut {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loading .spinner {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background-color: yellow;
+    animation: spin 5s infinite linear;
+  }
+
+  .loading.fadeOut .spinner {
+    animation-play-state: paused;
+  }
+
+  .skill-bar {
+    position: fixed;
+    right: 0;
+    bottom: 50px;
+    left: 0;
+    font-size: 0;
+  }
+
+  .skill-padding {
+    display: inline-block;
+    width: 20px;
+  }
+
+  .skill {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    margin: 0 1px;
+    vertical-align: top;
+    border: 1px solid #000;
+  }
+
+  .skill.is-active .front,
+  .skill.is-active .back {
+    box-shadow: inset 0 0 15px 7px #000;
+  }
+
+  .skill .front,
+  .skill .back {
+    width: 60px;
+    height: 60px;
+    background-size: 80px 80px;
+    background-position: -10px -10px;
+    background-repeat: no-repeat;
+  }
+
+  .skill-1 .front, .skill-1 .back { background-image: url('img/note_1.png'); }
+  .skill-2 .front, .skill-2 .back { background-image: url('img/note_2.png'); }
+  .skill-3 .front, .skill-3 .back { background-image: url('img/note_3.png'); }
+  .skill-4 .front, .skill-4 .back { background-image: url('img/note_4.png'); }
+  .skill-5 .front, .skill-5 .back { background-image: url('img/note_5.png'); }
+  .skill-6 .front, .skill-6 .back { background-image: url('img/note_6.png'); }
+  .skill-7 .front, .skill-7 .back { background-image: url('img/note_7.png'); }
+  .skill-8 .front, .skill-8 .back { background-image: url('img/note_8.png'); }
+  .skill-9 .front, .skill-9 .back { background-image: url('img/octave_down.png'); }
+  .skill-0 .front, .skill-0 .back { background-image: url('img/octave_up.png'); }
+
+  .octave-0 .skill-9 .back,
+  .octave-1 .skill-9 .back { background-image: url('img/octave_lock.png'); }
+
+  .octave-1 .skill-0 .back,
+  .octave-2 .skill-0 .back { background-image: url('img/octave_lock.png'); }
+
+
+  .skill .front,
+  .skill .back {
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: transform 0.3s;
+    transform-style: preserve-3d;
+  }
+
+  .skill .front {
+    z-index: 2;
+    transform: rotateX(0deg);
+  }
+
+  .skill .back {
+    transform: rotateX(180deg);
+  }
