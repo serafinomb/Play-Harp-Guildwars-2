@@ -71,6 +71,11 @@
     'C6': [],
   };
 
+  var didLoad = false;
+  var activeNotes = {};
+  var defaultOctave = 1;
+  var currentOctave = 1;
+
   // Pre-loading the audio files is useless when the browser caches them.
   function preloadSounds(sounds, cb) {
     var loadedCount = 0;
@@ -92,15 +97,19 @@
         var audio = loadAudio(note);
 
         // This event will fire every time the audio is ready to be played and
-        // not only once "onload". We therefore check whether we've or not
-        // already laoded all the needed audio files.
+        // not only once "onload"...
         audio.addEventListener('canplaythrough', function(note) {
+          // ...we therefore check whether we've or not already loaded all the
+          // needed audio files.
           if (loadedCount >= toLoadCount * queueLength) {
             return
           };
 
           loadedCount++;
           cb(loadedCount, toLoadCount * queueLength);
+
+        // binds the current note to the callback so it uses the right one when
+        // it is called.
         }.bind(null, note), false);
 
         sounds[note].push(audio);
@@ -121,11 +130,6 @@
     }
   });
 
-  var didLoad = false;
-  var activeNotes = {};
-  var defaultOctave = 1;
-  var currentOctave = 1;
-
   function addActiveStatus(element) {
     element && element.classList.add('is-active');
   }
@@ -136,8 +140,8 @@
 
   function handleOctaveChange(octave) {
     var skillBar = document.getElementById('skill-bar');
-    setTimeout(function() {
 
+    setTimeout(function() {
       skillBar.classList.remove('octave-0', 'octave-1', 'octave-2');
       skillBar.classList.add('octave-' + octave);
     }, 100);
@@ -156,28 +160,30 @@
   handleOctaveChange(currentOctave);
 
   function loadAudio(note) {
-    return new Audio('audio/' + note + '.mp3');
-  }
-
-  function playAudio(audio) {
-    audio.play();
+    var audio = new Audio('audio/' + note + '.mp3');
     audio.addEventListener('ended', function() {
       audio.currentTime = 0;
     });
+    return audio;
   }
 
   function playNote(note) {
     var preloaded = sounds[note];
 
     for (var i = 0; i < preloaded.length; i++) {
+      // I don't think it's necessary to check for ".paused".
       if ( ! ( ! preloaded[i].paused || preloaded[i].currentTime)) {
-        playAudio(preloaded[i]);
+        preloaded[i].play();
         return;
       }
     }
 
+    // If not playable audio is found in the preloaded array, we load a new
+    // one, play it and add it to the preloaded sounds.
+    // Note that if the browser is not caching the audio file, there will be
+    // a bit of delay between the "play"-action and the note playing.
     var audio = loadAudio(note);
-    playAudio(audio);
+    audio.play();
     sounds[note].push(audio);
   }
 
@@ -242,6 +248,7 @@
     e.preventDefault();
   }, false);
 
+  // Bind click events to the skill buttons to allow to skill-click.
   var skills = document.querySelectorAll('.js-skill');
 
   for (var i = 0; i < skills.length; i++) {
