@@ -111,8 +111,6 @@
   preloadSounds(sounds, function(loaded, total) {
     var remaining = total - loaded;
 
-    console.log(loaded, total);
-
     if (remaining == 0) {
       didLoad = true;
       var loadingScreen = document.getElementById('loadingScreen');
