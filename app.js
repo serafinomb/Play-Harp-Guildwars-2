@@ -178,8 +178,8 @@
       }
     }
 
-    // If not playable audio is found in the preloaded array, we load a new
-    // one, play it and add it to the preloaded sounds.
+    // If no playable audio is found in the preloaded array, we load a new one,
+    // play it and add it to the preloaded sounds.
     // Note that if the browser is not caching the audio file, there will be
     // a bit of delay between the "play"-action and the note playing.
     var audio = loadAudio(note);
