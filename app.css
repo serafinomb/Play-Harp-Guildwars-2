@@ -3,6 +3,12 @@
       to { transform: rotate(360deg); }
   }
 
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+  }
+
   body {
     text-align: center;
     background-image: url('img/gw668.jpg');
@@ -71,7 +77,7 @@
     display: inline-block;
     width: 60px;
     height: 60px;
-    margin: 0 1px;
+    margin: 1px;
     vertical-align: top;
     border: 1px solid #000;
   }
