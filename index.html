@@ -5,57 +5,115 @@
 </head>
 <body>
 
+  <div id="loadingScreen" class="loading">
+    <div class="spinner"></div>
+    <div class="background"></div>
+  </div>
+
   <div id="skill-bar" class="skill-bar">
-    <div id="skill-1" class="skill skill-1">
+    <div id="skill-1" class="js-skill skill skill-1" data-skill-id="1">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-2" class="skill skill-2">
+    <div id="skill-2" class="js-skill skill skill-2" data-skill-id="2">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-3" class="skill skill-3">
+    <div id="skill-3" class="js-skill skill skill-3" data-skill-id="3">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-4" class="skill skill-4">
+    <div id="skill-4" class="js-skill skill skill-4" data-skill-id="4">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-5" class="skill skill-5">
+    <div id="skill-5" class="js-skill skill skill-5" data-skill-id="5">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-6" class="skill skill-6">
+    <div class="skill-padding"></div>
+    <div id="skill-6" class="js-skill skill skill-6" data-skill-id="6">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-7" class="skill skill-7">
+    <div id="skill-7" class="js-skill skill skill-7" data-skill-id="7">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-8" class="skill skill-8">
+    <div id="skill-8" class="js-skill skill skill-8" data-skill-id="8">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-9" class="skill skill-9">
+    <div id="skill-9" class="js-skill skill skill-9" data-skill-id="9">
       <div class="front"></div>
       <div class="back"></div>
     </div>
-    <div id="skill-0" class="skill skill-10">
+    <div id="skill-0" class="js-skill skill skill-0" data-skill-id="0">
       <div class="front"></div>
       <div class="back"></div>
     </div>
   </div>
 
 <style>
+  @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+  }
+
   body {
     text-align: center;
+    background-image: url('img/gw668.jpg');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .loading {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: 1;
+    z-index: 99;
+
+    transition: opacity 1.5s ease;
+
+    background-color: #000;
+    background-image: url('img/divinitys_reach_loading_screen.jpg');
+    background-size: 100%;
+    background-position: 50%;
+    background-repeat: no-repeat;
+  }
+
+  .loading.fadeOut {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loading .spinner {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background-color: yellow;
+
+    animation: spin 5s infinite linear;
   }
 
   .skill-bar {
-    margin: 50px auto;
+    position: fixed;
+    right: 0;
+    bottom: 50px;
+    left: 0;
     font-size: 0;
+  }
+
+  .skill-padding {
+    display: inline-block;
+    width: 20px;
   }
 
   .skill {
@@ -91,13 +149,13 @@
   .skill-7 .front, .skill-7 .back { background-image: url('img/note_7.png'); }
   .skill-8 .front, .skill-8 .back { background-image: url('img/note_8.png'); }
   .skill-9 .front, .skill-9 .back { background-image: url('img/octave_down.png'); }
-  .skill-10 .front, .skill-10 .back { background-image: url('img/octave_up.png'); }
+  .skill-0 .front, .skill-0 .back { background-image: url('img/octave_up.png'); }
 
   .octave-0 .skill-9 .back,
   .octave-1 .skill-9 .back { background-image: url('img/octave_lock.png'); }
 
-  .octave-1 .skill-10 .back,
-  .octave-2 .skill-10 .back { background-image: url('img/octave_lock.png'); }
+  .octave-1 .skill-0 .back,
+  .octave-2 .skill-0 .back { background-image: url('img/octave_lock.png'); }
 
 
   .skill .front,
@@ -121,7 +179,7 @@
 </style>
 
 <script>
-var skillMap = {
+  var keyCodeToSkill = {
     '49': '1',
     '50': '2',
     '51': '3',
@@ -133,11 +191,24 @@ var skillMap = {
 
     '57': '9',
     '48': '0',
-    '67': '9',
-    '86': '0',
+    '67': '9', // Personal preference C
+    '86': '0', // Personal preference V
   };
 
-  var map = {
+  var skillToKeyCode = {
+    '1': '49',
+    '2': '50',
+    '3': '51',
+    '4': '52',
+    '5': '53',
+    '6': '54',
+    '7': '55',
+    '8': '56',
+    '9': '57',
+    '0': '48',
+  };
+
+  var keyCodeToNoteOctave = {
     '49': ['C3', 'C4', 'C5'],
     '50': ['D3', 'D4', 'D5'],
     '51': ['E3', 'E4', 'E5'],
@@ -178,20 +249,58 @@ var skillMap = {
     'C6': [],
   };
 
-  function preloadSounds(sounds) {
+  function preloadSounds(sounds, cb) {
+    var loadedCount = 0;
+    var toLoadCount = 0;
+
+    // Mind that each audio file will be new-ed five times. If the browser
+    // doesn't cache the downloaded audio, it will result in 5 * sounds.length
+    // (5 * 22) requests.
+    var queueLength = 5;
+
     for (var note in sounds) {
       if ( ! sounds.hasOwnProperty(note)) {
         continue;
       }
 
-      for (var i = 0; i < 25; i++) {
-        sounds[note].push(new Audio('audio/' + note + '.mp3'));
+      toLoadCount++;
+
+      for (var i = 0; i < queueLength; i++) {
+        var audio = loadAudio(note);
+
+        // This event will fire every time the audio is ready to be played and
+        // not only once "onload". We therefore check whether we've or not
+        // already laoded all the needed audio files.
+        audio.addEventListener('canplaythrough', function() {
+          if (loadedCount >= toLoadCount * queueLength) {
+            return
+          };
+
+          loadedCount++;
+          cb(loadedCount, toLoadCount * queueLength);
+        }, false);
+
+        sounds[note].push(audio);
       }
     }
   }
 
-  preloadSounds(sounds);
+  preloadSounds(sounds, function(loaded, total) {
+    var remaining = total - loaded;
 
+    if (remaining == 0) {
+      didLoad = true;
+      var loadingScreen = document.getElementById('loadingScreen');
+      loadingScreen.classList.add('fadeOut');
+      setTimeout(function() {
+        loadingScreen.remove();
+      }, 1500);
+    }
+
+    console.log(remaining);
+  });
+
+  var didLoad = false;
   var activeNotes = {};
   var defaultOctave = 1;
   var octave = 1;
@@ -225,40 +334,52 @@ var skillMap = {
 
   handleOctaveChange(octave);
 
+  function loadAudio(note) {
+    return new Audio('audio/' + note + '.mp3');
+  }
+
+  function playAudio(audio) {
+    audio.play();
+    audio.addEventListener('ended', function() {
+      audio.currentTime = 0;
+    });
+  }
+
   function playNote(note) {
     var preloaded = sounds[note];
 
     for (var i = 0; i < preloaded.length; i++) {
-      console.log(preloaded[i].ended)
       if ( ! ( ! preloaded[i].paused || preloaded[i].currentTime)) {
-        preloaded[i].play();
-        preloaded[i].addEventListener('ended', function() {
-          preloaded[i].currentTime = 0;
-          console.log('ended');
-        })
-        break;
+        playAudio(preloaded[i]);
+        return;
       }
-      // if (i == preloaded.length - 1) {
-      //   i = 0;
-      // }
     }
+
+    var audio = loadAudio(note);
+    playAudio(audio);
+    sounds[note].push(audio);
   }
 
-  document.addEventListener('keydown', function(e) {
-    if (activeNotes[e.which]) {
+  function onSkillActivation(skill) {
+    if ( ! didLoad) {
       return;
     }
 
-    activeNotes[e.which] = +new Date();
+    var which = skillToKeyCode[skill];
 
-    if ( ! (map[e.which] && map[e.which][octave])) {
+    if (activeNotes[which]) {
       return;
     }
 
-    var note = map[e.which][octave];
+    activeNotes[which] = +new Date();
 
+    if ( ! (keyCodeToNoteOctave[which] && keyCodeToNoteOctave[which][octave])) {
+      return;
+    }
 
-    addActiveStatus(document.getElementById('skill-' + skillMap[e.which]));
+    var note = keyCodeToNoteOctave[which][octave];
+
+    addActiveStatus(document.getElementById('skill-' + keyCodeToSkill[which]));
 
     if (note == '-1') {
       octave = Math.max(0, octave - 1);
@@ -273,12 +394,54 @@ var skillMap = {
     }
 
     playNote(note);
+  };
+
+  function onSkillDeactivation(skill) {
+    if ( ! didLoad) {
+      return;
+    }
+
+    removeActiveStatus(document.getElementById('skill-' + skill));
+    delete activeNotes[skillToKeyCode[skill]];
+  }
+
+  document.addEventListener('keydown', function(e) {
+    onSkillActivation(keyCodeToSkill[e.which]);
   }, false);
 
   document.addEventListener('keyup', function(e) {
-    removeActiveStatus(document.getElementById('skill-' + skillMap[e.which]));
-    delete activeNotes[e.which];
+    onSkillDeactivation(keyCodeToSkill[e.which]);
   }, false);
+
+  document.addEventListener('mousewheel', function(e) {
+    e.preventDefault();
+  }, false);
+
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  }, false);
+
+  var skills = document.querySelectorAll('.js-skill');
+
+  for (var i = 0; i < skills.length; i++) {
+    skills[i].addEventListener('mousedown', function(e) {
+      if (e.which !== 1) {
+        return;
+      }
+
+      var skill = e.currentTarget.getAttribute('data-skill-id');
+      onSkillActivation(skill);
+    }, false);
+
+    skills[i].addEventListener('mouseup', function(e) {
+      if (e.which !== 1) {
+        return;
+      }
+
+      var skill = e.currentTarget.getAttribute('data-skill-id');
+      onSkillDeactivation(skill);
+    }, false);
+  }
 </script>
 </body>
 </html>
