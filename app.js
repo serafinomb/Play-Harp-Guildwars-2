@@ -2,6 +2,7 @@
 
 (function() {
   var keyCodeToSkill = {
+    // Number keys
     '49': '1',
     '50': '2',
     '51': '3',
@@ -11,10 +12,23 @@
     '55': '7',
     '56': '8',
 
+    // Numpad
+    '97': '1',
+    '98': '2',
+    '99': '3',
+    '100': '4',
+    '101': '5',
+    '102': '6',
+    '103': '7',
+    '104': '8',
+
     '57': '9',
     '48': '0',
     '67': '9', // Personal preference C
     '86': '0', // Personal preference V
+    '105': '9', // Numpad 9
+    '96': '0', // Numpad 0
+
   };
 
   var skillToKeyCode = {
