@@ -3,6 +3,18 @@
     to { transform: rotate(360deg); }
 }
 
+@keyframes slot-fade-in {
+  from {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 html,
 body {
   height: 100%;
@@ -10,6 +22,8 @@ body {
 }
 
 body {
+  min-width: 700px;
+  min-height: 150px;
   text-align: center;
   background-image: url('img/gw668.jpg');
   background-repeat: no-repeat;
@@ -120,7 +134,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  transition: transform 0.3s;
+  transition: transform .5s ease;
   transform-style: preserve-3d;
 }
 
@@ -131,4 +145,46 @@ body {
 
 .skill .back {
   transform: rotateX(180deg);
+}
+
+.buff-bar {
+  position: fixed;
+  bottom: 124px;
+  right: 50px;
+  left: 50%;
+  height: 24px;
+  margin-left: 12px;
+  font-size: 0;
+  text-align: left;
+}
+
+.buff {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  animation: slot-fade-in .5s ease;
+  transform-origin: center;
+  vertical-align: top;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  display: none;
+}
+
+.buff.octave-0 {
+  background-image: url('img/note_6.png');
+}
+
+.buff.octave-1 {
+  background-image: url('img/note_1.png');
+}
+
+.buff.octave-2 {
+  background-image: url('img/note_2.png');
+}
+
+.buff-bar.octave-0 .octave-0,
+.buff-bar.octave-1 .octave-1,
+.buff-bar.octave-2 .octave-2 {
+  display: inline-block;
 }

@@ -154,6 +154,10 @@
 
   function handleOctaveChange(octave) {
     var skillBar = document.getElementById('skill-bar');
+    var buffBar = document.getElementById('buff-bar');
+
+    buffBar.classList.remove('octave-0', 'octave-1', 'octave-2');
+    buffBar.classList.add('octave-' + octave);
 
     setTimeout(function() {
       skillBar.classList.remove('octave-0', 'octave-1', 'octave-2');
@@ -280,6 +284,11 @@
         return;
       }
 
+      var skill = e.currentTarget.getAttribute('data-skill-id');
+      onSkillDeactivation(skill);
+    }, false);
+
+    skills[i].addEventListener('mouseleave', function(e) {
       var skill = e.currentTarget.getAttribute('data-skill-id');
       onSkillDeactivation(skill);
     }, false);
