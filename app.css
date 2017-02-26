@@ -22,6 +22,7 @@ body {
 }
 
 body {
+  position: relative;
   min-width: 700px;
   min-height: 150px;
   text-align: center;
@@ -74,7 +75,7 @@ body {
 }
 
 .skill-bar {
-  position: fixed;
+  position: absolute;
   right: 0;
   bottom: 50px;
   left: 0;
@@ -148,7 +149,7 @@ body {
 }
 
 .buff-bar {
-  position: fixed;
+  position: absolute;
   bottom: 124px;
   right: 50px;
   left: 50%;
