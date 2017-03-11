@@ -12,6 +12,67 @@
     <div class="background"></div>
   </div>
 
+  <div class="options">
+    <ul>
+      <li>
+        <span class="js-o-section-head">Control Options</span>
+        <ul>
+          <li>
+            <span>Weapon Skill 1</span>
+            <span class="js-o-keybind" data-skill="1"></span>
+          </li>
+          <li>
+            <span>Weapon Skill 2</span>
+            <span class="js-o-keybind" data-skill="2"></span>
+          </li>
+          <li>
+            <span>Weapon Skill 3</span>
+            <span class="js-o-keybind" data-skill="3"></span>
+          </li>
+          <li>
+            <span>Weapon Skill 4</span>
+            <span class="js-o-keybind" data-skill="4"></span>
+          </li>
+          <li>
+            <span>Weapon Skill 5</span>
+            <span class="js-o-keybind" data-skill="5"></span>
+          </li>
+          <li>
+            <span>Healing Skill 6</span>
+            <span class="js-o-keybind" data-skill="6"></span>
+          </li>
+          <li>
+            <span>Utility Skill 1</span>
+            <span class="js-o-keybind" data-skill="7"></span>
+          </li>
+          <li>
+            <span>Utility Skill 2</span>
+            <span class="js-o-keybind" data-skill="8"></span>
+          </li>
+          <li>
+            <span>Utility Skill 3</span>
+            <span class="js-o-keybind" data-skill="9"></span>
+          </li>
+          <li>
+            <span>Elite Skill</span>
+            <span class="js-o-keybind" data-skill="0"></span>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <span class="js-o-section-head">Sound Options</span>
+        <ul>
+          <li>
+            <span>Music Volume</span>
+            <span>
+              <input type="range" max="1" min="0" step="0.01" id="music-volume-control">
+            </span>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
   <div id="skill-bar" class="skill-bar">
     <div id="skill-1" class="js-skill skill skill-1" data-skill-id="1">
       <div class="front"></div>
@@ -63,7 +124,7 @@
   </div>
 
   <script src="app.js"></script>
-  
+
   <script>
     window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
     ga('create', 'UA-92620441-1', 'auto');

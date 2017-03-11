@@ -1,37 +1,7 @@
 'use strict';
 
 (function() {
-  var keyCodeToSkill = {
-    // Number keys
-    '49': '1',
-    '50': '2',
-    '51': '3',
-    '52': '4',
-    '53': '5',
-    '54': '6',
-    '55': '7',
-    '56': '8',
-
-    // Numpad
-    '97': '1',
-    '98': '2',
-    '99': '3',
-    '100': '4',
-    '101': '5',
-    '102': '6',
-    '103': '7',
-    '104': '8',
-
-    '57': '9',
-    '48': '0',
-    '67': '9', // Personal preference C
-    '86': '0', // Personal preference V
-    '105': '9', // Numpad 9
-    '96': '0', // Numpad 0
-
-  };
-
-  var skillToKeyCode = {
+  var skillToKeyCode = JSON.parse(window.localStorage.getItem('skillToKeyCode')) || {
     '1': '49',
     '2': '50',
     '3': '51',
@@ -44,20 +14,26 @@
     '0': '48',
   };
 
-  var keyCodeToNoteOctave = {
-    '49': ['C3', 'C4', 'C5'],
-    '50': ['D3', 'D4', 'D5'],
-    '51': ['E3', 'E4', 'E5'],
-    '52': ['F3', 'F4', 'F5'],
-    '53': ['G3', 'G4', 'G5'],
-    '54': ['A3', 'A4', 'A5'],
-    '55': ['B3', 'B4', 'B5'],
-    '56': ['C4', 'C5', 'C6'],
+  function keyCodeToSkill(which) {
+    for (var skill in skillToKeyCode) {
+      if (skillToKeyCode.hasOwnProperty(skill) && which == skillToKeyCode[skill]) {
+        return skill;
+      }
+    }
+  }
 
-    '57': ['-1', '-1', '-1'],
-    '48': ['+1', '+1', '+1'],
-    '67': ['-1', '-1', '-1'],
-    '86': ['+1', '+1', '+1'],
+  var skillToNoteOctave = {
+    '1': ['C3', 'C4', 'C5'],
+    '2': ['D3', 'D4', 'D5'],
+    '3': ['E3', 'E4', 'E5'],
+    '4': ['F3', 'F4', 'F5'],
+    '5': ['G3', 'G4', 'G5'],
+    '6': ['A3', 'A4', 'A5'],
+    '7': ['B3', 'B4', 'B5'],
+    '8': ['C4', 'C5', 'C6'],
+
+    '9': ['-1', '-1', '-1'],
+    '0': ['+1', '+1', '+1'],
   };
 
   var sounds = {
@@ -84,6 +60,8 @@
     'B5': [],
     'C6': [],
   };
+
+  var musicVolume = localStorage.getItem('musicVolume') || 0.6;
 
   var didLoad = false;
   var activeNotes = {};
@@ -191,6 +169,7 @@
     for (var i = 0; i < preloaded.length; i++) {
       // I don't think it's necessary to check for ".paused".
       if ( ! ( ! preloaded[i].paused || preloaded[i].currentTime)) {
+        preloaded[i].volume = musicVolume;
         preloaded[i].play();
         return;
       }
@@ -201,6 +180,7 @@
     // Note that if the browser is not caching the audio file, there will be
     // a bit of delay between the "play"-action and the note playing.
     var audio = loadAudio(note);
+    audio.volume = musicVolume;
     audio.play();
     sounds[note].push(audio);
   }
@@ -210,21 +190,19 @@
       return;
     }
 
-    var which = skillToKeyCode[skill];
-
-    if (activeNotes[which]) {
+    if (activeNotes[skill]) {
       return;
     }
 
-    activeNotes[which] = +new Date();
+    activeNotes[skill] = +new Date();
 
-    if ( ! (keyCodeToNoteOctave[which] && keyCodeToNoteOctave[which][currentOctave])) {
+    if ( ! (skillToNoteOctave[skill] && skillToNoteOctave[skill][currentOctave])) {
       return;
     }
 
-    var note = keyCodeToNoteOctave[which][currentOctave];
+    var note = skillToNoteOctave[skill][currentOctave];
 
-    addActiveStatus(document.getElementById('skill-' + keyCodeToSkill[which]));
+    addActiveStatus(document.getElementById('skill-' + skill));
 
     if (note == '-1') {
       currentOctave = Math.max(0, currentOctave - 1);
@@ -247,15 +225,15 @@
     }
 
     removeActiveStatus(document.getElementById('skill-' + skill));
-    delete activeNotes[skillToKeyCode[skill]];
+    delete activeNotes[skill];
   }
 
   document.addEventListener('keydown', function(e) {
-    onSkillActivation(keyCodeToSkill[e.which]);
+    onSkillActivation(keyCodeToSkill(e.which));
   }, false);
 
   document.addEventListener('keyup', function(e) {
-    onSkillDeactivation(keyCodeToSkill[e.which]);
+    onSkillDeactivation(keyCodeToSkill(e.which));
   }, false);
 
   document.addEventListener('mousewheel', function(e) {
@@ -266,7 +244,7 @@
     e.preventDefault();
   }, false);
 
-  // Bind click events to the skill buttons to allow to skill-click.
+  // Allow to skill-click
   var skills = document.querySelectorAll('.js-skill');
 
   for (var i = 0; i < skills.length; i++) {
@@ -293,4 +271,63 @@
       onSkillDeactivation(skill);
     }, false);
   }
+
+  /**
+   * Goes through every key-bind key control and updates its text
+   * @param  {array} controls The array of key-bind control elements
+   */
+  function renderControlOptions(controls) {
+    for (var i = 0; i < controls.length; i++) {
+      var control = keybindControls[i];
+      control.innerHTML = String.fromCharCode(skillToKeyCode[control.dataset.skill]);
+    }
+  }
+
+  // Allow to open the option sections by clicking on their titles.
+  var sectionControls = document.querySelectorAll('.js-o-section-head');
+
+  for (var i = 0; i < sectionControls.length; i++) {
+    var control = sectionControls[i];
+
+    control.addEventListener('click', function(e) {
+      e.target.classList.toggle('is-active');
+    }, false);
+  }
+
+  // Allow to set the key-bind by clicking on .js-o-keykind and pressing a key.
+  var keybindControls = document.querySelectorAll('.js-o-keybind');
+
+  renderControlOptions(keybindControls);
+
+  for (var i = 0; i < keybindControls.length; i++) {
+    var control = keybindControls[i];
+
+    control.addEventListener('click', function(clickEvent) {
+      clickEvent.target.innerHTML = '-';
+      document.addEventListener('keyup', function onKeyBind(keyupEvent) {
+        var existingSkillKeyBind;
+
+        if (existingSkillKeyBind = keyCodeToSkill(keyupEvent.which)) {
+          skillToKeyCode[existingSkillKeyBind] = undefined;
+        }
+
+        skillToKeyCode[clickEvent.target.dataset.skill] = keyupEvent.which;
+
+        window.localStorage.setItem('skillToKeyCode', JSON.stringify(skillToKeyCode));
+
+        renderControlOptions(keybindControls);
+        document.removeEventListener('keyup', onKeyBind);
+      }, false);
+    }, false);
+  }
+
+  // Allow to change the audio volume
+  var volumeControl = document.getElementById('music-volume-control');
+
+  volumeControl.value = musicVolume;
+
+  volumeControl.addEventListener('change', function(e) {
+    musicVolume = volumeControl.value;
+    localStorage.setItem('musicVolume', volumeControl.value);
+  }, false);
 })();

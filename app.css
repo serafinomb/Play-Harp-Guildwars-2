@@ -15,6 +15,10 @@
   }
 }
 
+* {
+  box-sizing: border-box;
+}
+
 html,
 body {
   height: 100%;
@@ -72,6 +76,87 @@ body {
 .loading.fadeOut .spinner {
   animation-play-state: paused;
   opacity: 0;
+}
+
+.options,
+.options span {
+  background-color: rgba(0,0,0,.7);
+}
+
+.options {
+  display: inline-block;
+  float: left;
+  padding: 5px;
+  color: #fff;
+  font-size: 0;
+  font-family: monospace;
+  text-align: left;
+}
+
+.options ul {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+}
+
+.options span {
+  display: inline-block;
+  min-width: 110px;
+  min-height: 23px;
+  margin: 1px 0;
+  padding: 5px 8px;
+  vertical-align: top;
+  line-height: 13px;
+  font-size: 11px;
+}
+
+.options span + span {
+  margin-left: 2px;
+  text-align: center;
+}
+
+.options span input {
+  width: 100%;
+  margin: 0;
+}
+
+.options > ul > li > span {
+  width: 100%;
+  cursor: pointer;
+}
+
+.options > ul > li > span:after {
+  content: " \0025BC";
+
+  /*
+   * Resize the "down-triangle" character to match the size of the "up-triangle"
+   * character.
+   */
+  font-size: 0.75em;
+  line-height: 1em;
+}
+
+.options > ul > li > span.is-active:after {
+  content: " \0025B2";
+  font-size: 1em;
+}
+
+.options > ul > li > span + ul {
+  display: none;
+}
+
+.options > ul > li > span + ul span {
+  color: #ccc;
+}
+
+.options > ul > li > span.is-active + ul {
+  display: block;
+  width: 250px;
+}
+
+.options > ul > li > span.is-active + ul span {
+  /* 250 (.control-options) = 124 (span) + 2 (span margin-left) + 124 (span) */
+  width: 124px;
 }
 
 .skill-bar {
