@@ -1,6 +1,18 @@
 'use strict';
 
-(function() {
+// (function() {
+
+  var user = Math.random().toString(36).substr(2);
+  var channel;
+  var database = firebase.database();
+
+  if ( ! window.location.hash.length) {
+    channel = Math.random().toString(36).substr(2, 5);
+    window.history.pushState(null, null, '#' + channel);
+  }
+
+  channel = window.location.hash.substr(1);
+
   var skillToKeyCode = JSON.parse(window.localStorage.getItem('skillToKeyCode')) || {
     '1': '49',
     '2': '50',
@@ -31,7 +43,6 @@
     '6': ['A3', 'A4', 'A5'],
     '7': ['B3', 'B4', 'B5'],
     '8': ['C4', 'C5', 'C6'],
-
     '9': ['-1', '-1', '-1'],
     '0': ['+1', '+1', '+1'],
   };
@@ -61,12 +72,11 @@
     'C6': [],
   };
 
-  var musicVolume = localStorage.getItem('musicVolume') || 0.6;
-
   var didLoad = false;
   var activeNotes = {};
   var defaultOctave = 1;
   var currentOctave = 1;
+  var musicVolume = localStorage.getItem('musicVolume') || 0.6;
 
   // Pre-loading the audio files is useless when the browser caches them.
   function preloadSounds(sounds, cb) {
@@ -153,8 +163,6 @@
     }
   }
 
-  handleOctaveChange(currentOctave);
-
   function loadAudio(note) {
     var audio = new Audio('audio/' + note + '.mp3');
     audio.addEventListener('ended', function() {
@@ -204,6 +212,14 @@
 
     addActiveStatus(document.getElementById('skill-' + skill));
 
+    database.ref(channel).push({
+      time: +new Date,
+      user: user,
+      skill: skill,
+      octave: currentOctave,
+      skillDown: true
+    });
+
     if (note == '-1') {
       currentOctave = Math.max(0, currentOctave - 1);
       handleOctaveChange(currentOctave);
@@ -225,6 +241,15 @@
     }
 
     removeActiveStatus(document.getElementById('skill-' + skill));
+
+    database.ref(channel).push({
+      time: +new Date,
+      user: user,
+      skill: skill,
+      octave: currentOctave,
+      skillDown: false
+    });
+
     delete activeNotes[skill];
   }
 
@@ -272,6 +297,8 @@
     }, false);
   }
 
+  handleOctaveChange(currentOctave);
+
   /**
    * Goes through every key-bind key control and updates its text
    * @param  {array} controls The array of key-bind control elements
@@ -297,8 +324,6 @@
   // Allow to set the key-bind by clicking on .js-o-keykind and pressing a key.
   var keybindControls = document.querySelectorAll('.js-o-keybind');
 
-  renderControlOptions(keybindControls);
-
   for (var i = 0; i < keybindControls.length; i++) {
     var control = keybindControls[i];
 
@@ -308,7 +333,7 @@
         var existingSkillKeyBind;
 
         if (existingSkillKeyBind = keyCodeToSkill(keyupEvent.which)) {
-          skillToKeyCode[existingSkillKeyBind] = undefined;
+          delete skillToKeyCode[existingSkillKeyBind];
         }
 
         skillToKeyCode[clickEvent.target.dataset.skill] = keyupEvent.which;
@@ -330,4 +355,7 @@
     musicVolume = volumeControl.value;
     localStorage.setItem('musicVolume', volumeControl.value);
   }, false);
-})();
+
+  renderControlOptions(keybindControls);
+
+// })();

@@ -123,7 +123,21 @@
     <div class="buff octave-2"></div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/3.7.1/firebase.js"></script>
+  <script>
+    var config = {
+      apiKey: "AIzaSyCgXri2PhJAkyh6gQk6oM_2EiHDDGbjhrU",
+      authDomain: "gw2-instrument.firebaseapp.com",
+      databaseURL: "https://gw2-instrument.firebaseio.com",
+      storageBucket: "gw2-instrument.appspot.com",
+      messagingSenderId: "770431754394"
+    };
+    firebase.initializeApp(config);
+  </script>
+
   <script src="app.js"></script>
+
+  <script src="orchestra.js"></script>
 
   <script>
     window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
