@@ -3,6 +3,22 @@
     to { transform: rotate(360deg); }
 }
 
+@keyframes slot-fade-in {
+  from {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
 html,
 body {
   height: 100%;
@@ -10,6 +26,9 @@ body {
 }
 
 body {
+  position: relative;
+  min-width: 700px;
+  min-height: 150px;
   text-align: center;
   background-image: url('img/gw668.jpg');
   background-repeat: no-repeat;
@@ -59,8 +78,90 @@ body {
   opacity: 0;
 }
 
+.options,
+.options span {
+  background-color: rgba(0,0,0,.7);
+}
+
+.options {
+  display: inline-block;
+  float: left;
+  padding: 5px;
+  color: #fff;
+  font-size: 0;
+  font-family: monospace;
+  text-align: left;
+}
+
+.options ul {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+}
+
+.options span {
+  display: inline-block;
+  min-width: 110px;
+  min-height: 23px;
+  margin: 1px 0;
+  padding: 5px 8px;
+  vertical-align: top;
+  line-height: 13px;
+  font-size: 11px;
+}
+
+.options span + span {
+  margin-left: 2px;
+  text-align: center;
+  cursor: default;
+}
+
+.options span input {
+  width: 100%;
+  margin: 0;
+}
+
+.options > ul > li > span {
+  width: 100%;
+  cursor: pointer;
+}
+
+.options > ul > li > span:after {
+  content: " \0025BC";
+
+  /*
+   * Resize the "down-triangle" character to match the size of the "up-triangle"
+   * character.
+   */
+  font-size: 0.75em;
+  line-height: 1em;
+}
+
+.options > ul > li > span.is-active:after {
+  content: " \0025B2";
+  font-size: 1em;
+}
+
+.options > ul > li > span + ul {
+  display: none;
+}
+
+.options > ul > li > span + ul span {
+  color: #ccc;
+}
+
+.options > ul > li > span.is-active + ul {
+  display: block;
+  width: 250px;
+}
+
+.options > ul > li > span.is-active + ul span {
+  /* 250 (.control-options) = 124 (span) + 2 (span margin-left) + 124 (span) */
+  width: 124px;
+}
+
 .skill-bar {
-  position: fixed;
+  position: absolute;
   right: 0;
   bottom: 50px;
   left: 0;
@@ -120,7 +221,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  transition: transform 0.3s;
+  transition: transform .5s ease;
   transform-style: preserve-3d;
 }
 
@@ -131,4 +232,46 @@ body {
 
 .skill .back {
   transform: rotateX(180deg);
+}
+
+.buff-bar {
+  position: absolute;
+  bottom: 124px;
+  right: 50px;
+  left: 50%;
+  height: 24px;
+  margin-left: 12px;
+  font-size: 0;
+  text-align: left;
+}
+
+.buff {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  animation: slot-fade-in .5s ease;
+  transform-origin: center;
+  vertical-align: top;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  display: none;
+}
+
+.buff.octave-0 {
+  background-image: url('img/note_6.png');
+}
+
+.buff.octave-1 {
+  background-image: url('img/note_1.png');
+}
+
+.buff.octave-2 {
+  background-image: url('img/note_2.png');
+}
+
+.buff-bar.octave-0 .octave-0,
+.buff-bar.octave-1 .octave-1,
+.buff-bar.octave-2 .octave-2 {
+  display: inline-block;
 }
