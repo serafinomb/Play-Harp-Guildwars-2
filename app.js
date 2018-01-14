@@ -1,3 +1,4 @@
+;
 (function() {
   'use strict';
 
@@ -64,7 +65,7 @@
     'C6': [],
   };
 
-  var musicVolume = localStorage.getItem('musicVolume') || 0.6;
+  var musicVolume = parseFloat(localStorage.getItem('musicVolume')) || 0.6;
 
   var didLoad = false;
   var activeNotes = {};
@@ -126,22 +127,33 @@
   });
 
   var recording = false;
+  var recordingStartedAt = null;
 
   const ACTION_START_RECORDING = 1;
   const ACTION_STOP_RECORDING = 2;
-  const ACTION_SKILL_ACTIVATION = 3;
-  const ACTION_SKILL_DEACTIVATION = 4;
+  const ACTION_PLAY_NOTE = 3;
+  const ACTION_CHANGE_OCTAVE = 4;
+  const ACTION_ON_SKILL_ACTIVATION = 5;
+  const ACTION_ON_SKILL_DEACTIVATION = 6;
 
   function record(action, payload) {
     if ( ! recording) {
       return;
     }
 
-    playback.push({
-      t: +new Date,
-      a: action,
-      p: payload,
-    })
+    const now = +new Date;
+
+    // @todo 2018-01-14 Refactor.
+    //  I don't like this check. Can also be playback.length === 0
+    if (action === ACTION_START_RECORDING) {
+      recordingStartedAt = now;
+    }
+
+    if (payload) {
+      playback.push([now - recordingStartedAt, action, payload]);
+    } else {
+      playback.push([now - recordingStartedAt, action]);
+    }
   }
 
   function addActiveStatus(element) {
@@ -150,6 +162,10 @@
 
   function removeActiveStatus(element) {
     element && element.classList.remove('is-active');
+  }
+
+  function shouldLivePlay() {
+    return document.getElementById('recording-live-playing').checked;
   }
 
   function handleOctaveChange(octave) {
@@ -175,7 +191,7 @@
     }
 
     currentOctave = octave;
-    // record(ACTION_CHANGE_OCTAVE, [octave]);
+    record(ACTION_CHANGE_OCTAVE, [octave]);
   }
 
   handleOctaveChange(currentOctave);
@@ -188,14 +204,15 @@
     return audio;
   }
 
-  function playNote(note) {
+  function playNote(note, volume) {
     var preLoaded = sounds[note];
 
     for (var i = 0; i < preLoaded.length; i++) {
       // I don't think it's necessary to check for ".paused".
       if ( ! ( ! preLoaded[i].paused || preLoaded[i].currentTime)) {
-        preLoaded[i].volume = musicVolume;
+        preLoaded[i].volume = volume;
         preLoaded[i].play();
+        record(ACTION_PLAY_NOTE, [note, volume]);
         return;
       }
     }
@@ -205,8 +222,9 @@
     // Note that if the browser is not caching the audio file, there will be
     // a bit of delay between the "play"-action and the note playing.
     var audio = loadAudio(note);
-    audio.volume = musicVolume;
+    audio.volume = volume;
     audio.play();
+    record(ACTION_PLAY_NOTE, [note, volume]);
     sounds[note].push(audio);
   }
 
@@ -225,9 +243,9 @@
       return;
     }
 
-    record(ACTION_SKILL_ACTIVATION, [skill, octave]);
-
     var note = skillToNoteOctave[skill][octave];
+
+    record(ACTION_ON_SKILL_ACTIVATION, [note, octave]);
 
     if (octave === currentOctave) {
       addActiveStatus(document.getElementById('skill-' + skill));
@@ -243,15 +261,21 @@
       return;
     }
 
-    playNote(note);
+    playNote(note, musicVolume);
   };
 
-  function onSkillDeactivation(skill) {
+  function onSkillDeactivation(skill, octave) {
     if ( ! didLoad) {
       return;
     }
 
-    record(ACTION_SKILL_DEACTIVATION, [skill]);
+    if ( ! (skillToNoteOctave[skill] && skillToNoteOctave[skill][octave])) {
+      return;
+    }
+
+    var note = skillToNoteOctave[skill][octave];
+
+    record(ACTION_ON_SKILL_DEACTIVATION, [note, octave]);
 
     removeActiveStatus(document.getElementById('skill-' + skill));
     delete activeNotes[skill];
@@ -262,7 +286,7 @@
   }, false);
 
   document.addEventListener('keyup', function(e) {
-    onSkillDeactivation(keyCodeToSkill(e.which));
+    onSkillDeactivation(keyCodeToSkill(e.which), currentOctave);
   }, false);
 
   document.addEventListener('mousewheel', function(e) {
@@ -282,7 +306,7 @@
         return;
       }
 
-      var skill = e.currentTarget.getAttribute('data-skill-id');
+      const skill = e.currentTarget.getAttribute('data-skill-id');
       onSkillActivation(skill, currentOctave);
     }, false);
 
@@ -291,13 +315,13 @@
         return;
       }
 
-      var skill = e.currentTarget.getAttribute('data-skill-id');
-      onSkillDeactivation(skill);
+      const skill = e.currentTarget.getAttribute('data-skill-id');
+      onSkillDeactivation(skill, currentOctave);
     }, false);
 
     skills[i].addEventListener('mouseleave', function(e) {
-      var skill = e.currentTarget.getAttribute('data-skill-id');
-      onSkillDeactivation(skill);
+      const skill = e.currentTarget.getAttribute('data-skill-id');
+      onSkillDeactivation(skill, currentOctave);
     }, false);
   }
 
@@ -356,19 +380,15 @@
   volumeControl.value = musicVolume;
 
   volumeControl.addEventListener('change', function(e) {
-    musicVolume = volumeControl.value;
-    localStorage.setItem('musicVolume', volumeControl.value);
+    musicVolume = parseFloat(volumeControl.value);
+    localStorage.setItem('musicVolume', musicVolume);
   }, false);
 
   const recordToggle = document.querySelector('.js-o-record-toggle');
   const recordReset = document.querySelector('.js-o-record-reset');
   const recordSave = document.querySelector('.js-o-record-save');
-
-  const recordLoad = document.querySelector('.js-o-record-load');
-  const recordLoadInput = document.getElementById('load-music-base64');
-
   const recordPlayToggle = document.querySelector('.js-o-record-play-toggle');
-
+  const recordLivePlayToggle = document.querySelector('#recording-live-playing');
 
   recordToggle.addEventListener('click', function(e) {
     if (recording) {
@@ -397,79 +417,125 @@
       recording = false;
     }
 
-    window.location.hash = btoa(JSON.stringify(playback));
-  }, false);
-
-  recordLoad.addEventListener('click', function(e) {
-    if (recordLoadInput.value.trim().length === 0) {
-      console.warn("Input value is empty, won't load.");
-      return;
+    if (playback.length > 0) {
+      window.location.hash = JSON.stringify(playback);
+    } else {
+      //
     }
-
-    window.location.hash = recordLoadInput.value;
   }, false);
 
-  var playSetTimeout = [];
+  var playSetTimeoutIds = [];
   var playing = false;
 
   recordPlayToggle.addEventListener('click', function(e) {
     if (playing) {
-      playSetTimeout.forEach(clearTimeout);
-      playSetTimeout = [];
+      playSetTimeoutIds.forEach(clearTimeout);
+      playSetTimeoutIds = [];
       recordPlayToggle.innerHTML = 'Play';
       playing = false;
     } else {
       playing = true;
       recordPlayToggle.innerHTML = 'Stop';
-      const music = JSON.parse(atob(window.location.hash.substring(1)));
-      const offset = music[0].t;
-      const startOctave = music[0].p[0];
 
-      handleOctaveChange(startOctave);
+      let music;
+
+      try {
+        music = JSON.parse(window.location.hash.substring(1));
+      } catch (e) {
+        console.error(e);
+        recordPlayToggle.innerHTML = 'Play';
+        playing = false;
+        return;
+      }
 
       music.forEach(function (tick) {
-        const timestamp = tick.t;
-        const action = tick.a;
-        const payload = tick.p;
+        const [offset, action, payload] = tick;
 
+        // We use curly braces to scope the variables inside each case.
         switch (action) {
-          // case ACTION_CHANGE_OCTAVE:
-          //   playSetTimeout.push(setTimeout(function () {
-          //     handleOctaveChange(payload[0]);
-          //   }, timestamp - offset));
-          //   break;
+          case ACTION_PLAY_NOTE: {
+            playSetTimeoutIds.push(setTimeout(function () {
+              if (shouldLivePlay()) {
+                return;
+              }
 
-          case ACTION_SKILL_ACTIVATION:
-            playSetTimeout.push(setTimeout(function () {
-              onSkillActivation(payload[0], payload[1]);
-            }, timestamp - offset));
+              const [note, octave] = payload;
+              playNote(note, octave);
+            }, offset));
             break;
+          }
 
-          case ACTION_SKILL_DEACTIVATION:
-            playSetTimeout.push(setTimeout(function () {
-              onSkillDeactivation(payload[0]);
-            }, timestamp - offset));
+          case ACTION_CHANGE_OCTAVE: {
+            playSetTimeoutIds.push(setTimeout(function () {
+              if ( ! shouldLivePlay()) {
+                return;
+              }
+
+              handleOctaveChange(payload[0]);
+            }, offset));
             break;
+          }
 
-          case ACTION_START_RECORDING:
-            playSetTimeout.push(setTimeout(function () {
-              console.log('started');
-            }, timestamp - offset));
+          case ACTION_ON_SKILL_ACTIVATION: {
+            playSetTimeoutIds.push(setTimeout(function () {
+              if ( ! shouldLivePlay()) {
+                return;
+              }
+
+              const [note, octave] = payload;
+
+              const skill = Object.keys(skillToNoteOctave).find(skill => skillToNoteOctave[skill][octave] === note);
+              onSkillActivation(skill, octave);
+            }, offset));
             break;
+          }
 
-          case ACTION_STOP_RECORDING:
-            playSetTimeout.push(setTimeout(function () {
-              playSetTimeout.forEach(clearTimeout);
-              playSetTimeout = [];
+          case ACTION_ON_SKILL_DEACTIVATION: {
+            playSetTimeoutIds.push(setTimeout(function () {
+              if ( ! shouldLivePlay()) {
+                return;
+              }
+
+              const [note, octave] = payload;
+
+              const skill = Object.keys(skillToNoteOctave).find(skill => skillToNoteOctave[skill][octave] === note);
+              onSkillDeactivation(skill, octave);
+            }, offset));
+            break;
+          }
+
+          case ACTION_START_RECORDING: {
+            playSetTimeoutIds.push(setTimeout(function () {
+              if ( ! shouldLivePlay()) {
+                return;
+              }
+
+              handleOctaveChange(payload[0]);
+            }, offset));
+            break;
+          }
+
+          case ACTION_STOP_RECORDING: {
+            playSetTimeoutIds.push(setTimeout(function () {
+              playSetTimeoutIds.forEach(clearTimeout);
+              playSetTimeoutIds = [];
               recordPlayToggle.innerHTML = 'Play';
               playing = false;
-            }, timestamp - offset));
+            }, offset));
             break;
+          }
 
-          default:
+          default: {
             console.warn('Action [%s] not recognized.', action);
+          }
         }
       });
+    }
+  }, false);
+
+  recordLivePlayToggle.addEventListener('change', function() {
+    if (recordLivePlayToggle.checked === false) {
+      Object.keys(skillToKeyCode).forEach(skill => onSkillDeactivation(skill, currentOctave));
     }
   }, false);
 })();
