@@ -418,7 +418,7 @@
     }
 
     if (playback.length > 0) {
-      window.location.hash = JSON.stringify(playback);
+      window.location.hash = encodeURI(JSON.stringify(playback));
     } else {
       //
     }
@@ -440,7 +440,7 @@
       let music;
 
       try {
-        music = JSON.parse(window.location.hash.substring(1));
+        music = JSON.parse(decodeURI(window.location.hash.substring(1)));
       } catch (e) {
         console.error(e);
         recordPlayToggle.innerHTML = 'Play';
