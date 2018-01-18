@@ -2,8 +2,32 @@
 (function() {
   'use strict';
 
+  var config = {
+    apiKey: "AIzaSyBXc88ZPfXbi9n_Nnvd3QfJOYztBDpt5mA",
+    authDomain: "play-harp-guildwars-2.firebaseapp.com",
+    databaseURL: "https://play-harp-guildwars-2.firebaseio.com",
+    projectId: "play-harp-guildwars-2",
+    storageBucket: "play-harp-guildwars-2.appspot.com",
+    messagingSenderId: "957207051422"
+  };
+
+  firebase.initializeApp(config);
+
+  firebase.auth().signInAnonymously().catch(function(error) {
+    var errorCode = error.code;
+    var errorMessage = error.message;
+
+    if (errorCode === 'auth/operation-not-allowed') {
+      console.error('You must enable Anonymous auth in the Firebase Console.');
+    } else {
+      console.error(error);
+    }
+  });
+
+  // Initialize Cloud Firestore through Firebase
+  var db = firebase.firestore();
+
   let playback = [];
-  window.playback = playback;
 
   var skillToKeyCode = JSON.parse(window.localStorage.getItem('skillToKeyCode')) || {
     '1': '49',
@@ -150,9 +174,9 @@
     }
 
     if (payload) {
-      playback.push([now - recordingStartedAt, action, payload]);
+      playback.push({ o: now - recordingStartedAt, a: action, p: payload });
     } else {
-      playback.push([now - recordingStartedAt, action]);
+      playback.push({ o: now - recordingStartedAt, a: action });
     }
   }
 
@@ -398,7 +422,7 @@
     } else {
       recording = true;
       playback = [];
-      recordToggle.innerHTML = 'Stop';
+      recordToggle.innerHTML = '(Click to stop)';
       record(ACTION_START_RECORDING, [currentOctave]);
     }
   }, false);
@@ -418,7 +442,17 @@
     }
 
     if (playback.length > 0) {
-      window.location.hash = encodeURI(JSON.stringify(playback));
+      recordSave.innerHTML = 'Saving…';
+      db.collection('musics').add({ p: playback }).then(function(docRef) {
+        window.location.hash = docRef.id;
+        recordSave.innerHTML = 'Saved in URL!';
+        setTimeout(function() {
+          recordSave.innerHTML = 'Save';
+        }, 5 * 1000);
+      }).catch(function(error) {
+        recordSave.innerHTML = 'Save';
+        throw new error;
+      });
     } else {
       //
     }
@@ -427,7 +461,7 @@
   var playSetTimeoutIds = [];
   var playing = false;
 
-  recordPlayToggle.addEventListener('click', function(e) {
+  recordPlayToggle.addEventListener('click', async function(e) {
     if (playing) {
       playSetTimeoutIds.forEach(clearTimeout);
       playSetTimeoutIds = [];
@@ -440,7 +474,16 @@
       let music;
 
       try {
-        music = JSON.parse(decodeURI(window.location.hash.substring(1)));
+        // @todo 2018-01-19 Add memoization (cache)
+        music = await db.collection('musics').doc(window.location.hash.substring(1)).get().then(function(doc) {
+          if (doc.exists) {
+            return doc.data().p;
+          }
+
+          throw new Error("Document couldn't be found.");
+        }).catch(function(error) {
+          throw new Error(error);
+        });
       } catch (e) {
         console.error(e);
         recordPlayToggle.innerHTML = 'Play';
@@ -449,7 +492,7 @@
       }
 
       music.forEach(function (tick) {
-        const [offset, action, payload] = tick;
+        const [offset, action, payload] = [tick.o, tick.a, tick.p];
 
         // We use curly braces to scope the variables inside each case.
         switch (action) {
