@@ -676,6 +676,11 @@
 
   var streaming = false;
   recordStreamToggle.addEventListener('click', function(event) {
+    if ( ! user.uid) {
+      console.warn('Authentication failed, user not found. Streaming requires authentication.');
+      return;
+    }
+
     // When the target is not a span, we clicked on the anchor. We don't want
     // to do any action.
     if (event.target.tagName !== 'SPAN') {
@@ -684,9 +689,11 @@
 
     if (streaming) {
       streaming = false;
+      database.ref('musics/' + user.uid).remove();
       recordStreamToggle.innerHTML = 'Stream';
     } else {
       streaming = true;
+      database.ref('musics/' + user.uid).remove();
       recordStreamToggle.innerHTML = '<a target="_blank" href="' + window.location.origin + '/#/streams/' + user.uid + '">Streaming...</a> (Stop)';
     }
   }, false);
