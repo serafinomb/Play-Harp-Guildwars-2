@@ -2,6 +2,7 @@
 (function() {
   'use strict';
 
+  var user = null;
   var config = {
     apiKey: "AIzaSyBXc88ZPfXbi9n_Nnvd3QfJOYztBDpt5mA",
     authDomain: "play-harp-guildwars-2.firebaseapp.com",
@@ -24,8 +25,18 @@
     }
   });
 
+  firebase.auth().onAuthStateChanged(function(u) {
+    if (u) {
+      // User is signed in. u.isAnonymous, u.uid
+      user = u;
+    } else {
+      // User is signed out.
+    }
+  });
+
   // Initialize Cloud Firestore through Firebase
   var db = firebase.firestore();
+  var database = firebase.database();
 
   let playback = [];
 
@@ -161,10 +172,6 @@
   const ACTION_ON_SKILL_DEACTIVATION = 6;
 
   function record(action, payload) {
-    if ( ! recording) {
-      return;
-    }
-
     const now = +new Date;
 
     // @todo 2018-01-14 Refactor.
@@ -173,10 +180,20 @@
       recordingStartedAt = now;
     }
 
+    const tick = { o: now - recordingStartedAt, a: action };
+
     if (payload) {
-      playback.push({ o: now - recordingStartedAt, a: action, p: payload });
-    } else {
-      playback.push({ o: now - recordingStartedAt, a: action });
+      tick['p'] = payload;
+    }
+
+    if (recording) {
+      playback.push(tick);
+    }
+
+    if (streaming) {
+      database.ref('musics/' + user.uid).push(tick).then(function(result) {
+        console.log('result', result);
+      });
     }
   }
 
@@ -217,8 +234,6 @@
     currentOctave = octave;
     record(ACTION_CHANGE_OCTAVE, [octave]);
   }
-
-  handleOctaveChange(currentOctave);
 
   function loadAudio(note) {
     var audio = new Audio('audio/' + note + '.mp3');
@@ -304,6 +319,8 @@
     removeActiveStatus(document.getElementById('skill-' + skill));
     delete activeNotes[skill];
   }
+
+  handleOctaveChange(currentOctave);
 
   document.addEventListener('keydown', function(e) {
     onSkillActivation(keyCodeToSkill(e.which), currentOctave);
@@ -408,10 +425,85 @@
     localStorage.setItem('musicVolume', musicVolume);
   }, false);
 
+  var key = null;
+
+  window.onhashchange = function() {
+    const hash = window.location.hash.substring(2).split('/');
+
+    if (hash !== 'streams/' + _key) {
+      database.ref('musics/' + _key).off();
+    }
+  };
+
+  var url = window.location.hash.substring(2);
+  const [action, _key] = url.split('/');
+  key = _key;
+
+  if (action === 'streams') {
+    let initialDataLoaded = false;
+
+    database.ref('musics/' + key).limitToLast(1).on('child_added', function(snapshot) {
+      if (initialDataLoaded) {
+        const tick = snapshot.val();
+        const [action, payload] = [tick.a, tick.p];
+
+        switch (action) {
+          case ACTION_PLAY_NOTE: {
+            if (shouldLivePlay()) {
+              return;
+            }
+
+            const [note, octave] = payload;
+            playNote(note, octave);
+            break;
+          }
+
+          case ACTION_CHANGE_OCTAVE: {
+            if ( ! shouldLivePlay()) {
+              return;
+            }
+
+            handleOctaveChange(payload[0]);
+            break;
+          }
+
+          case ACTION_ON_SKILL_ACTIVATION: {
+            if ( ! shouldLivePlay()) {
+              return;
+            }
+
+            const [note, octave] = payload;
+
+            const skill = Object.keys(skillToNoteOctave).find(skill => skillToNoteOctave[skill][octave] === note);
+            onSkillActivation(skill, octave);
+            break;
+          }
+
+          case ACTION_ON_SKILL_DEACTIVATION: {
+            if ( ! shouldLivePlay()) {
+              return;
+            }
+
+            const [note, octave] = payload;
+
+            const skill = Object.keys(skillToNoteOctave).find(skill => skillToNoteOctave[skill][octave] === note);
+            onSkillDeactivation(skill, octave);
+            break;
+          }
+        }
+      }
+    });
+
+    database.ref('musics/' + key).limitToLast(1).once('value', function() {
+      initialDataLoaded = true;
+    });
+  }
+
   const recordToggle = document.querySelector('.js-o-record-toggle');
   const recordReset = document.querySelector('.js-o-record-reset');
   const recordSave = document.querySelector('.js-o-record-save');
   const recordPlayToggle = document.querySelector('.js-o-record-play-toggle');
+  const recordStreamToggle = document.querySelector('.js-o-record-stream-toggle');
   const recordLivePlayToggle = document.querySelector('#recording-live-playing');
 
   recordToggle.addEventListener('click', function(e) {
@@ -444,7 +536,7 @@
     if (playback.length > 0) {
       recordSave.innerHTML = 'Saving…';
       db.collection('musics').add({ p: playback }).then(function(docRef) {
-        window.location.hash = docRef.id;
+        window.location.hash = '/songs/' + docRef.id;
         recordSave.innerHTML = 'Saved in URL!';
         setTimeout(function() {
           recordSave.innerHTML = 'Save';
@@ -465,7 +557,7 @@
     if (playing) {
       playSetTimeoutIds.forEach(clearTimeout);
       playSetTimeoutIds = [];
-      recordPlayToggle.innerHTML = 'Play';
+      recordPlayToggle.innerHTML = 'Play from URL';
       playing = false;
     } else {
       playing = true;
@@ -475,7 +567,13 @@
 
       try {
         // @todo 2018-01-19 Add memoization (cache)
-        music = await db.collection('musics').doc(window.location.hash.substring(1)).get().then(function(doc) {
+        const [action, key] = window.location.hash.substring(2).split('/');
+
+        if (action !== 'songs' || key === undefined) {
+          return;
+        }
+
+        music = await db.collection('musics').doc(key).get().then(function(doc) {
           if (doc.exists) {
             return doc.data().p;
           }
@@ -486,7 +584,7 @@
         });
       } catch (e) {
         console.error(e);
-        recordPlayToggle.innerHTML = 'Play';
+        recordPlayToggle.innerHTML = 'Play from URL';
         playing = false;
         return;
       }
@@ -562,7 +660,7 @@
             playSetTimeoutIds.push(setTimeout(function () {
               playSetTimeoutIds.forEach(clearTimeout);
               playSetTimeoutIds = [];
-              recordPlayToggle.innerHTML = 'Play';
+              recordPlayToggle.innerHTML = 'Play from URL';
               playing = false;
             }, offset));
             break;
@@ -573,6 +671,23 @@
           }
         }
       });
+    }
+  }, false);
+
+  var streaming = false;
+  recordStreamToggle.addEventListener('click', function(event) {
+    // When the target is not a span, we clicked on the anchor. We don't want
+    // to do any action.
+    if (event.target.tagName !== 'SPAN') {
+      return;
+    }
+
+    if (streaming) {
+      streaming = false;
+      recordStreamToggle.innerHTML = 'Stream';
+    } else {
+      streaming = true;
+      recordStreamToggle.innerHTML = '<a target="_blank" href="' + window.location.origin + '/#/streams/' + user.uid + '">Streaming...</a> (Stop)';
     }
   }, false);
 
