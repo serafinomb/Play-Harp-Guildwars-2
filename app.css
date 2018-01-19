@@ -30,11 +30,8 @@ body {
   min-width: 700px;
   min-height: 150px;
   text-align: center;
-  background-image: url('img/gw668.jpg');
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   background-size: cover;
-  background-position: center;
+  background: url('img/gw668.jpg') no-repeat fixed center;
 }
 
 .loading {
@@ -48,11 +45,8 @@ body {
   opacity: 1;
   transition: opacity 1.5s ease;
 
-  background-color: #000;
-  background-image: url('img/gw682.jpg');
   background-size: 100%;
-  background-position: 50%;
-  background-repeat: no-repeat;
+  background: #000 url('img/gw682.jpg') no-repeat 50%;
 }
 
 .loading.fadeOut {
